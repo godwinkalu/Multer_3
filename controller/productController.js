@@ -114,46 +114,56 @@ exports.updateProduct = async (req,res)=>{
     })
   }
 }
-exports.updateSpecificFile = async (req,res) =>{
+exports.updateSpecificFile = async (req, res) => {
   try {
-    const { id, index } = req.params
-    const product = await productModel.findById(id)
-    if (!product) {
-      res.status(404).json({
-        message: 'product does not exist'
-      })
+    const { id, index } = req.params;
+    const { productName, quantity, description, price } = req.body;
 
+    const product = await productModel.findById(id);
+    if (!product) {
+      return res.status(404).json({
+        message: 'product does not exist'
+      });
     }
+
+    const fileindex = parseInt(index, 10);
+
+    // Check if index is valid
+    if (fileindex < 0 || fileindex >= product.images.length) {
+      return res.status(400).json({
+        message: 'Invalid index. Please provide a valid image index'
+      });
+    }
+
+    // Delete old file
+    const oldImagePath = product.images[fileindex];
+    if (fs.existsSync(oldImagePath)) {
+      fs.unlinkSync(oldImagePath);
+    }
+
+    product.images[fileindex] = req.files[0].path;
+
     const data = {
       productName: productName || product.productName,
       quantity: quantity || product.quantity,
       description: description || product.description,
       price: price || product.price,
-      images: images || product.images
-    }
-      const fileindex = parseInt(index,10)
-      if (fileindex < 0 || fileindex >= product.images.length) {
-        res.status(400).json({
-          message: 'put the index currectly'
-        })
-        const oldImagePath = product.images[fileindex]
-        if (fs.existsSync(oldImagePath)) {
-           fs.unlinkSync(oldImagePath);
-        }
-        product.images[fileindex] = req.files[0].path;
+      images: product.images, 
+    };
 
-      }
-      const updatedProduct = await productModel.findByIdAndUpdate(id,data,{new: true})
-      res.status(200).json({
-      message: 'updated successfully',
+    const updatedProduct = await productmodel.findByIdAndUpdate(id, data, { new: true });
+
+    res.status(200).json({
+      message:' Image at index ${fileindex} updated successfully',
       data: updatedProduct
-      })
+    });
+
   } catch (error) {
     res.status(500).json({
       message: error.message,
     });
   }
-}
+};
 exports.deleteProduct = async (req,res)=>{
 
   try {
