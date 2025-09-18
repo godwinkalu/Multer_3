@@ -164,6 +164,48 @@ exports.updateSpecificFile = async (req, res) => {
     });
   }
 };
+   exports.updateSpecificFiles = async (req, res) => {
+  try {
+    const { id, indexes } = req.params;
+    const product = await productmodel.findById(id);
+
+    if (!product) {
+      return res.status(404).json({ message: "Product does not exist" });
+    }
+
+    // convert "0,2,3" -> [0, 2, 3]
+    const indexArray = indexes.split(",").map(i => parseInt(i.trim(), 10));
+
+    // validate indices
+    const invalidIndex = indexArray.some(i => i < 0 || i >= product.images.length);
+    if (invalidIndex) {
+      return res.status(400).json({ message: "One or more indices are invalid" });
+    }
+
+    // loop over given indices and replace with uploaded files
+    indexArray.forEach((fileIndex, idx) => {
+      const oldImagePath = product.images[fileIndex];
+      if (fs.existsSync(oldImagePath)) {
+        fs.unlinkSync(oldImagePath); // delete old image
+      }
+
+      // replace with new uploaded file (req.files[idx])
+      if (req.files[idx]) {
+        product.images[fileIndex] = req.files[idx].path;
+      }
+    });
+
+    await product.save();
+
+    res.status(200).json({
+      message: "Selected images updated successfully",
+      data: product
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message});
+}
+};
 exports.deleteProduct = async (req,res)=>{
 
   try {
