@@ -119,7 +119,7 @@ exports.updateSpecificFile = async (req, res) => {
     const { id, index } = req.params;
     const { productName, quantity, description, price } = req.body;
 
-    const product = await productModel.findById(id);
+    const product = await productmodel.findById(id);
     if (!product) {
       return res.status(404).json({
         message: 'product does not exist'
